@@ -1,78 +1,133 @@
 <?php
 /*
-	Section: HTMLBlock
-	Author: opportunex
-	Author URI: http://www.opportunex.com/paglines/htmlblock
-	Description: A simple HTML block and options for extending standard content.
-	Class Name: PageLinesHTMLBlock
-	Workswith: templates, main, header, morefoot, sidebar1, sidebar2, sidebar_wrap
-	Version: 1.0.0
-	Edition: pro
-	Cloning: true
+	Section: HTML Block
+	Author: opportunex - Thomas Butler
+	Author URI: http://opportunex.com
+	Description: A simple box for adding HTML, includes a WYSIWYG editor from Redactor (http://imperavi.com/redactor/).
+	Class Name: PLHTML_block
+	Filter: component
+	Loading: active
 */
 
-class PageLinesHTMLBlock extends PageLinesSection {
+class PLHTML_block extends PageLinesSection {
+    
+    function section_styles(){
+        
+        if( pl_draft_mode() ){
+        
+            wp_enqueue_style( 'redactor-css', $this->base_url.'/redactor.css');
+            wp_enqueue_script( 'redactor-js',$this->base_url . '/redactor.min.js');
+            wp_enqueue_script( 'livequery-js',$this->base_url . '/jquery.livequery.js');
+        
+        }
+        
+    }
+    
+    function section_opts(){
+        
+        $opts = array(
+			array(
+				'type'		=> 'multi',
+				'key'		=> 'htmlblock_text', 
+				'span'		=> 3,
+				'opts'		=> array(
+					array(
+						'type' 			=> 'textarea',
+						'key'			=> 'htmlblock_content',
+						'label' 		=> __( 'HTML Block', 'html-block' ),
+                        'help'      => __( "To modify raw HTML code click the &#60;&#47;&#62; button. Tags that are not allowed: 'html', 'head', 'link', 'body', 'meta'.  WordPress may also strip out a variety of HTML5 tags as well.", 'html-block' )
+                    ),
+					
+				)
+			), 
+			array(
+				'type'		=> 'multi',
+				'key'		=> 'htmlblock_config', 
+				'opts'		=> array(
+					array(
+						'key'			=> 'htmlblock_pad',
+						'type' 			=> 'text',
+						'label' 	=> __( 'Padding <small>(CSS Shorthand)</small>', 'pagelines' ),
+						'ref'		=> __( 'This option uses CSS padding shorthand. For example, use "15px 30px" for 15px padding top/bottom, and 30 left/right.', 'html-block' ),
+                    	
+					),
+					array(
+						'type' 			=> 'select',
+						'key'			=> 'htmlblock_align',
+						'label' 		=> 'Alignment',
+						'opts'			=> array(
+							'textleft'		=> array('name' => 'Align Left (Default)'),
+							'textright'		=> array('name' => 'Align Right'),
+							'textcenter'	=> array('name' => 'Center'),
+							'textjustify'	=> array('name' => 'Justify'),
+						)
+					),
+					array(
+						'type' 			=> 'select_animation',
+						'key'			=> 'htmlblock_animation',
+						'label' 		=> __( 'Viewport Animation', 'pagelines' ),
+						'help' 			=> __( 'Optionally animate the appearance of this section on view.', 'html-block' ),
+					),
+					
+				)
+			),
+			
+			
+			
+		);
 
-	function section_optionator( $settings ){
-		
-		$settings = wp_parse_args($settings, $this->optionator_default);
-		
-		$metatab_array = array(
+        return $opts;
 
-				'html_block_class' => array(
-					'type' 			=> 'text',	
-					'title' 		=> 'HTML Block Class',
-					'shortexp' 		=> 'Applies this class to the HTML content block for individual styling'
-				),
-				'html_block_content' => array(
-					'type' 			=> 'textarea',
-					'inputsize'		=> 'big',		
-					'title' 		=> 'HTML Block Content',
-					'shortexp' 		=> 'Add HTML content for this block'
-				),
-                'html_block_scripts' => array(
-					'type' 			=> 'textarea',
-					'inputsize'		=> 'big',		
-					'title' 		=> 'Custom HTML Scripts',
-					'shortexp' 		=> 'Add add custom JavaScript or JQuery. This option is for advaced users only.  Make sure you know what you are doing or you can break your site! Scripts and styles are displayed "inline".  <em>(<script></script> tag already included.)</em>'
-				),
-                'html_block_styles' => array(
-					'type' 			=> 'textarea',
-					'inputsize'		=> 'big',		
-					'title' 		=> 'Custom HTML Style',
-					'shortexp' 		=> 'Add add custom CSS for HTML block.  Make sure you know what you are doing or you can break your site! Scripts and styles are displayed "inline". <em>(<style></style> tag already included.)</em>'
-				),
-			);
-		
-		$metatab_settings = array(
-				'id' 		=> $this->id.'meta',
-				'name' 		=> $this->name,
-				'icon' 		=> $this->icon, 
-				'clone_id'	=> $settings['clone_id'], 
-				'active'	=> $settings['active']
-			);
-		
-		register_metatab($metatab_settings, $metatab_array);
+    }
+    
+    function section_head(){
+        
+        if( pl_draft_mode() ){ ?>
+        
+		<script type="text/javascript">
+        jQuery(document).ready(function() { 
+            
+            jQuery(".redactor_box").livequery("mouseleave", function(){ 
+                if(jQuery(this).find(".redactor_btn_html").hasClass("redactor_act")) {
+                    jQuery.optPanel.setBinding();
+                } else {
+                    jQuery(jQuery(this).find("#htmlblock_content")).redactor("sync");
+                }
+            });
+                
+                
+            var buttons = ['html', '|', 'formatting', '|', 'bold', 'italic', 'underline', '|', 'unorderedlist', 'orderedlist', 'outdent', 'indent', '|', 'link', '|', 'fontcolor', 'backcolor', '|', 'alignment', '|', 'horizontalrule', '|', 'alignleft', 'aligncenter', 'alignright', 'justify'];
+            var denieds = ['html', 'head', 'link', 'body', 'meta'];
+        
+            var timerId = setTimeout(function() {
+                jQuery(".opt-htmlblock_text textarea").redactor({ focus: true, buttons: buttons, deniedTags: denieds, autoresize: false, minHeight: 350 }); 
+                jQuery(".redactor_box").addClass("lstn");
+                jQuery.optPanel.setBinding();
+                jQuery.optPanel.setPanel();
+            }, 500);
+            
+        });
+        </script>
+        
+		<?php }
+
 	}
 
-	function section_template( $clone_id ) { 
+	function section_template() {
 
-		$class = (ploption('html_block_class', $this->oset)) ? ploption('html_block_class', $this->oset) : 'html-standard';
-		$content = ploption('html_block_content', $this->oset);
-		$scripts = ploption('html_block_scripts', $this->oset);
-        $css = ploption('html_block_styles', $this->oset);
-            
-		if($content){
-            
-            $c = do_shortcode( $content );
-            
-            printf('<div class="hentry %s"><div class="hentry-pad %s-pad entry_content">%s</div></div>', $class, $class, $c, $scripts, $css);
-            printf('<script type="text/javascript">'.$scripts.'</script>');
-            printf('<style>'.$css.'</style>');
+		$id = $this->get_the_id();
+        
+        $html = $this->opt('htmlblock_content');
 
-		} else
-			echo setup_section_notify($this, __('Add content to meta option to activate.', 'pagelines') );
- 
+		$html = (!$html) ? '<p><strong>HTML Block</strong> &raquo; Add Your Content!</p>' : sprintf('<div class="hentry">%s</div>', $html ); 
+		
+		$class = $this->opt('htmlblock_animation');
+			
+		$align = $this->opt('htmlblock_align');
+		
+		$pad = ($this->opt('htmlblock_pad')) ? sprintf('padding: %s;', $this->opt('htmlblock_pad')) : ''; 
+		
+		printf('<div class="htmlblock-wrap pl-animation %s %s" style="%s">%s</div>', $align, $class, $pad, $html);
+
 	}
-
-} /* End of section class */
+}
